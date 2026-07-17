@@ -1,0 +1,54 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+
+  html, body, #root {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.18); border-radius: 3px; }
+}
+
+@layer utilities {
+  /* Canvas image rendering */
+  .canvas-crisp { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+  /* Ticker flash colours */
+  .flash-up { color: #26a69a !important; }
+  .flash-dn { color: #ef5350 !important; }
+
+  /* Pulse dot animations */
+  .dot-live  { animation: dotPulse 2s ease-in-out infinite; }
+  .dot-conn  { animation: dotPulse 0.9s ease-in-out infinite; }
+
+  /* Dropdown slide-in */
+  .dd-open { animation: ddFade 0.13s ease; }
+}
+
+@keyframes dotPulse {
+  0%,100% { opacity:1; transform:scale(1); }
+  50%      { opacity:0.4; transform:scale(0.75); }
+}
+
+@keyframes ddFade {
+  from { opacity:0; transform:translateY(-5px); }
+  to   { opacity:1; transform:none; }
+}
+
+@keyframes tickFlash {
+  0%   { opacity:1; }
+  100% { opacity:0; }
+}
+
+.tick-flash-bar {
+  animation: tickFlash 0.25s ease forwards;
+}
