@@ -108,10 +108,12 @@ class ChartRenderer {
   }
 
   // ── Layout helpers ─────────────────────────────────────────────
+  get _profW() { return this.W < 600 ? Math.max(65, this.W * 0.22) : LAYOUT.PROFILE_W; }
+  get _priceAx() { return this.W < 600 ? 55 : LAYOUT.PRICE_AXIS; }
   get _mH() { return this.H * (1 - LAYOUT.VOL_RATIO) - LAYOUT.TIME_AXIS; }
   get _vH() { return this.H * LAYOUT.VOL_RATIO; }
-  get _mW() { return this.W - LAYOUT.PROFILE_W - LAYOUT.PRICE_AXIS; }
-  get _pX() { return this._mW + LAYOUT.PRICE_AXIS; }
+  get _mW() { return this.W - this._profW - this._priceAx; }
+  get _pX() { return this._mW + this._priceAx; }
 
   _xFor(i)          { return xForIndex(i, this.viewStart, this.viewEnd, LAYOUT.LEFT_PAD, this._mW); }
   _yFor(p, lo, hi)  { return yForPrice(p, this._mH, lo, hi); }
@@ -135,7 +137,7 @@ class ChartRenderer {
     pg.addColorStop(0, 'rgba(255,255,200,0)');
     pg.addColorStop(1, 'rgba(255,255,185,0.38)');
     ctx.fillStyle = pg;
-    ctx.fillRect(this._pX - 1, 0, LAYOUT.PROFILE_W + 2, this._mH + LAYOUT.TIME_AXIS);
+    ctx.fillRect(this._pX - 1, 0, this._profW + 2, this._mH + LAYOUT.TIME_AXIS);
   }
 
   // ── LAYER: Grid + Axes ─────────────────────────────────────────
@@ -164,7 +166,7 @@ class ChartRenderer {
     for (let g = 1; g < 8; g++) {
       const y = mH * g / 8;
       const p = this._priceAt(y, lo, hi);
-      ctx.fillText(fmtPrice(p), mW + LAYOUT.PRICE_AXIS - 5, y + 4);
+      ctx.fillText(fmtPrice(p), mW + this._priceAx - 5, y + 4);
       ctx.strokeStyle = COLORS.gridStrong;
       ctx.lineWidth   = 1;
       ctx.beginPath();
@@ -318,7 +320,7 @@ class ChartRenderer {
       upperThr, lowerThr,
     } = prof;
 
-    const profMaxW = LAYOUT.PROFILE_W - 18;
+    const profMaxW = this._profW - 18;
 
     // Helper: screen Y for a profile bin centre
     const binY = (b) => this._yFor(pL + (b + 0.5) * bSz, lo, hi);
@@ -333,7 +335,7 @@ class ChartRenderer {
       ctx.fillRect(LAYOUT.LEFT_PAD, vahY, mW - LAYOUT.LEFT_PAD, valY - vahY);
       // Profile panel
       ctx.fillStyle = 'rgba(41,98,255,0.06)';
-      ctx.fillRect(this._pX, vahY, LAYOUT.PROFILE_W, valY - vahY);
+      ctx.fillRect(this._pX, vahY, this._profW, valY - vahY);
     }
 
     // ── Profile bars ──────────────────────────────────────────────
@@ -410,12 +412,12 @@ class ChartRenderer {
       ctx.lineWidth   = 1;
       ctx.beginPath();
       ctx.moveTo(this._pX, vahY);
-      ctx.lineTo(this._pX + LAYOUT.PROFILE_W - 6, vahY);
+      ctx.lineTo(this._pX + this._profW - 6, vahY);
       ctx.stroke();
       ctx.strokeStyle = 'rgba(38,166,154,0.55)';
       ctx.beginPath();
       ctx.moveTo(this._pX, valY);
-      ctx.lineTo(this._pX + LAYOUT.PROFILE_W - 6, valY);
+      ctx.lineTo(this._pX + this._profW - 6, valY);
       ctx.stroke();
       ctx.setLineDash([]);
     }
@@ -717,11 +719,30 @@ export function useChartRenderer(canvasRefs, wrapRef, data, onHoverCandle, onVie
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup',   onUp);
 
+    // Native touch listeners on the overlay canvas for 120fps smooth panning
+    const ovCanvas = canvasRefs.ov.current;
+    const onTouchStart = (e) => {
+      e.preventDefault();
+      renderer.onTouchStart(Array.from(e.touches));
+    };
+    const onTouchMove = (e) => {
+      e.preventDefault();
+      renderer.onTouchMove(Array.from(e.touches));
+    };
+    if (ovCanvas) {
+      ovCanvas.addEventListener('touchstart', onTouchStart, { passive: false });
+      ovCanvas.addEventListener('touchmove', onTouchMove, { passive: false });
+    }
+
     return () => {
       renderer.destroy();
       ro?.disconnect();
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup',   onUp);
+      if (ovCanvas) {
+        ovCanvas.removeEventListener('touchstart', onTouchStart);
+        ovCanvas.removeEventListener('touchmove', onTouchMove);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -757,14 +778,6 @@ export function useChartRenderer(canvasRefs, wrapRef, data, onHoverCandle, onVie
       e.preventDefault();
       const r = e.currentTarget.getBoundingClientRect();
       rendererRef.current?.onWheel(e.deltaY, e.clientX, r);
-    },
-    onTouchStart: (e) => {
-      e.preventDefault();
-      rendererRef.current?.onTouchStart(Array.from(e.touches));
-    },
-    onTouchMove: (e) => {
-      e.preventDefault();
-      rendererRef.current?.onTouchMove(Array.from(e.touches));
     },
   }), []);
 

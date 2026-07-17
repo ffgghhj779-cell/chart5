@@ -32,6 +32,10 @@
 
   /* Dropdown slide-in */
   .dd-open { animation: ddFade 0.13s ease; }
+
+  /* Hide scrollbar for horizontal swipe areas */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 }
 
 @keyframes dotPulse {

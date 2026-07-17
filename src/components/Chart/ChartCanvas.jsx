@@ -73,7 +73,7 @@ export function ChartCanvas({ candles, lastWsPrice, currentIv, showPOC, showLiq,
   const canvasStyle = { position: 'absolute', inset: 0, width: '100%', height: '100%', imageRendering: 'pixelated' };
 
   return (
-    <div ref={wrapRef} className="absolute inset-0 w-full h-full overflow-hidden cursor-crosshair select-none">
+    <div ref={wrapRef} className="absolute inset-0 w-full h-full overflow-hidden cursor-crosshair select-none touch-none">
 
       {/* Canvas stack — each layer painted independently */}
       <canvas ref={canvasRefs.bg}   style={canvasStyle} />
@@ -91,8 +91,6 @@ export function ChartCanvas({ candles, lastWsPrice, currentIv, showPOC, showLiq,
         onMouseDown={handlers.onMouseDown}
         onMouseUp={handlers.onMouseUp}
         onWheel={handlers.onWheel}
-        onTouchStart={handlers.onTouchStart}
-        onTouchMove={handlers.onTouchMove}
       />
 
       {/* DOM Tooltip */}

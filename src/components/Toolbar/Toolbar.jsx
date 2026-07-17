@@ -28,7 +28,7 @@ export function Toolbar({
   const pct = (priceChange > 0 ? '+' : '') + priceChange.toFixed(2) + '%';
 
   return (
-    <header className="h-11 flex-shrink-0 flex items-center gap-2 px-3 bg-white/70 backdrop-blur-xl border-b border-black/[0.07] shadow-sm z-20 select-none">
+    <header className="h-11 w-full flex-shrink-0 flex items-center gap-2 px-3 bg-white/70 backdrop-blur-xl border-b border-black/[0.07] shadow-sm z-20 select-none overflow-x-auto no-scrollbar">
 
       {/* Asset selector */}
       <AssetSelector current={currentAsset} onChange={onAssetChange} />

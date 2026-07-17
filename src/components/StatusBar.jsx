@@ -21,7 +21,7 @@ export function StatusBar({ pocPrice, vahPrice, valPrice, visibleCount, dateFrom
   const fmtD = (ts) => ts ? new Date(ts).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '—';
 
   return (
-    <div className="h-[21px] flex-shrink-0 flex items-center gap-2.5 px-3 bg-white/40 border-b border-black/[0.05] text-[9.5px] text-gray-500 z-10 overflow-hidden">
+    <div className="h-[21px] w-full flex-shrink-0 flex items-center gap-2.5 px-3 bg-white/40 border-b border-black/[0.05] text-[9.5px] text-gray-500 z-10 overflow-x-auto no-scrollbar">
 
       <Item label="POC"  value={pocPrice  ? fmtPrice(pocPrice)  : null} valueClass="text-amber-600 font-bold" />
       <Sep />
