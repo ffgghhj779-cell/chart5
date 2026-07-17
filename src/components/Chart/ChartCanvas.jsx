@@ -73,7 +73,7 @@ export function ChartCanvas({ candles, lastWsPrice, currentIv, showPOC, showLiq,
   const canvasStyle = { position: 'absolute', inset: 0, width: '100%', height: '100%', imageRendering: 'pixelated' };
 
   return (
-    <div ref={wrapRef} className="relative flex-1 overflow-hidden cursor-crosshair select-none">
+    <div ref={wrapRef} className="absolute inset-0 w-full h-full overflow-hidden cursor-crosshair select-none">
 
       {/* Canvas stack — each layer painted independently */}
       <canvas ref={canvasRefs.bg}   style={canvasStyle} />
