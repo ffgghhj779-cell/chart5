@@ -91,6 +91,10 @@ export function ChartCanvas({ candles, lastWsPrice, currentIv, showPOC, showLiq,
         onMouseDown={handlers.onMouseDown}
         onMouseUp={handlers.onMouseUp}
         onWheel={handlers.onWheel}
+        onTouchStart={handlers.onTouchStart}
+        onTouchMove={handlers.onTouchMove}
+        onTouchEnd={handlers.onTouchEnd}
+        onTouchCancel={handlers.onTouchCancel}
       />
 
       {/* DOM Tooltip */}

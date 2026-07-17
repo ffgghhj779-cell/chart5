@@ -660,6 +660,18 @@ class ChartRenderer {
     }
   }
 
+  onTouchEnd(touches) {
+    if (touches.length === 0) {
+      this.touchX0    = null;
+      this.touchDist0 = null;
+      this.touchView0 = null;
+    } else if (touches.length === 1) {
+      this.touchX0    = touches[0].clientX;
+      this.touchView0 = { s: this.viewStart, e: this.viewEnd };
+      this.touchDist0 = null;
+    }
+  }
+
   destroy() {
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);
@@ -719,30 +731,11 @@ export function useChartRenderer(canvasRefs, wrapRef, data, onHoverCandle, onVie
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup',   onUp);
 
-    // Native touch listeners on the overlay canvas for 120fps smooth panning
-    const ovCanvas = canvasRefs.ov.current;
-    const onTouchStart = (e) => {
-      e.preventDefault();
-      renderer.onTouchStart(Array.from(e.touches));
-    };
-    const onTouchMove = (e) => {
-      e.preventDefault();
-      renderer.onTouchMove(Array.from(e.touches));
-    };
-    if (ovCanvas) {
-      ovCanvas.addEventListener('touchstart', onTouchStart, { passive: false });
-      ovCanvas.addEventListener('touchmove', onTouchMove, { passive: false });
-    }
-
     return () => {
       renderer.destroy();
       ro?.disconnect();
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup',   onUp);
-      if (ovCanvas) {
-        ovCanvas.removeEventListener('touchstart', onTouchStart);
-        ovCanvas.removeEventListener('touchmove', onTouchMove);
-      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -775,10 +768,22 @@ export function useChartRenderer(canvasRefs, wrapRef, data, onHoverCandle, onVie
       e.currentTarget.style.cursor = 'crosshair';
     },
     onWheel: (e) => {
-      e.preventDefault();
+      // e.preventDefault() on wheel might be needed, but React passive warns. We'll leave it out or keep it if it works.
       const r = e.currentTarget.getBoundingClientRect();
       rendererRef.current?.onWheel(e.deltaY, e.clientX, r);
     },
+    onTouchStart: (e) => {
+      rendererRef.current?.onTouchStart(e.touches);
+    },
+    onTouchMove: (e) => {
+      rendererRef.current?.onTouchMove(e.touches);
+    },
+    onTouchEnd: (e) => {
+      rendererRef.current?.onTouchEnd(e.touches);
+    },
+    onTouchCancel: (e) => {
+      rendererRef.current?.onTouchEnd(e.touches);
+    }
   }), []);
 
   return handlers;
