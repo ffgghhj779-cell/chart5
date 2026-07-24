@@ -9,7 +9,23 @@ import { LoadingOverlay } from './components/LoadingOverlay.jsx';
 import { ChartCanvas }   from './components/Chart/ChartCanvas.jsx';
 import { useBinanceREST } from './hooks/useBinanceREST.js';
 import { useBinanceWS }   from './hooks/useBinanceWS.js';
-import { DEFAULT_ASSET }  from './constants/assets.js';
+import { useTwelveDataREST } from './hooks/useTwelveDataREST.js';
+import { useTwelveDataWS }   from './hooks/useTwelveDataWS.js';
+import { DEFAULT_ASSET, LIMIT_MAP }  from './constants/assets.js';
+
+// Helper for TwelveData interval ms
+const getIntervalMs = (interval) => {
+  const map = {
+    '1m': 60000,
+    '5m': 300000,
+    '15m': 900000,
+    '1h': 3600000,
+    '4h': 14400000,
+    '1d': 86400000,
+    '1w': 604800000,
+  };
+  return map[interval] || 86400000;
+};
 
 export default function App() {
   // ── Asset / interval state ─────────────────────────────────────
@@ -46,8 +62,13 @@ export default function App() {
     dateTo:       null,
   });
 
-  // ── REST data hook ─────────────────────────────────────────────
-  const { candles, setCandles, loading, fetchCandles } = useBinanceREST();
+  // ── REST data hooks ────────────────────────────────────────────
+  const bRest = useBinanceREST();
+  const tRest = useTwelveDataREST();
+
+  const isBinance = currentAsset.provider !== 'twelvedata';
+  const activeRest = isBinance ? bRest : tRest;
+  const { candles, setCandles, loading, fetchCandles } = activeRest;
 
   // ── Load symbol helper ─────────────────────────────────────────
   const loadSymbol = useCallback(async (asset, interval) => {
@@ -57,19 +78,20 @@ export default function App() {
     setPriceChange(0);
     setHoveredCandle(null);
 
-    const result = await fetchCandles(asset.sym, interval);
+    // Call the correct fetch method based on the asset being loaded
+    const result = await (asset.provider === 'twelvedata' ? tRest.fetchCandles : bRest.fetchCandles)(asset.sym, interval);
     setIsFallback(!result.ok);
 
     if (result.data.length > 0) {
       const last = result.data[result.data.length - 1];
-      openPriceRef.current = result.data[0].c;
+      openPriceRef.current = result.data[0].o;
       setLivePrice(last.c);
       setPriceChange(((last.c - result.data[0].o) / result.data[0].o) * 100);
     }
 
     // Enable WS after data is ready
     setWsEnabled(true);
-  }, [fetchCandles]);
+  }, [bRest.fetchCandles, tRest.fetchCandles]);
 
   // ── Initial load ───────────────────────────────────────────────
   useEffect(() => {
@@ -78,54 +100,95 @@ export default function App() {
   }, []);
 
   // ── WebSocket tick handler ─────────────────────────────────────
-  const handleTick = useCallback((k) => {
-    // k is raw Binance kline object from WS message
-    const newCandle = {
-      t: k.t,
-      o: parseFloat(k.o),
-      h: parseFloat(k.h),
-      l: parseFloat(k.l),
-      c: parseFloat(k.c),
-      v: parseFloat(k.v),
-    };
+  const handleTick = useCallback((payload) => {
+    let newPrice = 0;
+    let arrow = '';
 
     setCandles(prev => {
       if (prev.length === 0) return prev;
-      const last = prev[prev.length - 1];
-      if (last.t === newCandle.t) {
-        // Update existing last candle in-place
-        const next = [...prev];
-        next[next.length - 1] = newCandle;
-        return next;
-      } else if (newCandle.t > last.t) {
-        // New candle formed
-        return [...prev, newCandle];
+      const next = [...prev];
+      let last = { ...next[next.length - 1] };
+
+      if (payload.isTwelveData) {
+        // TwelveData raw price tick logic
+        const price = payload.price;
+        const tickTime = payload.timestamp;
+        const ivMs = getIntervalMs(currentInterval);
+        const candleStart = Math.floor(tickTime / ivMs) * ivMs;
+
+        if (candleStart === last.t) {
+          last.c = price;
+          last.h = Math.max(last.h, price);
+          last.l = Math.min(last.l, price);
+          next[next.length - 1] = last;
+        } else if (candleStart > last.t) {
+          last = { t: candleStart, o: price, h: price, l: price, c: price, v: 0 };
+          next.push(last);
+        }
+        newPrice = price;
+        arrow = price >= next[next.length - 1].o ? '▲' : '▼';
+      } else {
+        // Binance fully-formed kline logic
+        const k = payload;
+        const newCandle = {
+          t: k.t,
+          o: parseFloat(k.o),
+          h: parseFloat(k.h),
+          l: parseFloat(k.l),
+          c: parseFloat(k.c),
+          v: parseFloat(k.v),
+        };
+
+        if (last.t === newCandle.t) {
+          next[next.length - 1] = newCandle;
+        } else if (newCandle.t > last.t) {
+          next.push(newCandle);
+        }
+        newPrice = newCandle.c;
+        arrow = newCandle.c >= newCandle.o ? '▲' : '▼';
       }
-      return prev;
+
+      // Update live price state directly here using refs if needed, 
+      // but standard setState works if we extract the new price out
+      return next;
     });
 
-    // Update live price display
-    setLivePrice(newCandle.c);
-    if (openPriceRef.current > 0) {
-      setPriceChange(((newCandle.c - openPriceRef.current) / openPriceRef.current) * 100);
-    }
+    // Update live price and tab title out-of-band to avoid tricky stale state in useCallback
+    setLivePrice(prevLive => {
+      // Small trick: since we don't have newPrice natively exposed outside setCandles easily without another ref,
+      // we can just rely on the latest tick we parsed.
+      // Wait, we need the parsed price. We can re-parse it here.
+      const p = payload.isTwelveData ? payload.price : parseFloat(payload.c);
+      
+      if (openPriceRef.current > 0) {
+        setPriceChange(((p - openPriceRef.current) / openPriceRef.current) * 100);
+      }
+      return p;
+    });
 
     setTickCount(n => n + 1);
 
     // Flash the browser tab title
+    const p = payload.isTwelveData ? payload.price : parseFloat(payload.c);
     clearTimeout(lastFlashTimer.current);
-    const arrow = newCandle.c >= newCandle.o ? '▲' : '▼';
-    document.title = `${arrow} ${newCandle.c.toFixed(2)} · ${currentAsset.label}`;
+    document.title = `${p.toFixed(2)} · ${currentAsset.label}`;
     lastFlashTimer.current = setTimeout(() => {
       document.title = `Dynamic Liquidity HeatMap Pro – ${currentAsset.label}`;
     }, 3000);
-  }, [currentAsset.label, setCandles]);
+  }, [currentAsset.label, setCandles, currentInterval]);
 
-  // ── WebSocket hook ─────────────────────────────────────────────
+  // ── WebSocket hooks ────────────────────────────────────────────
   useBinanceWS({
     symbol:   currentAsset.sym,
     interval: currentInterval,
-    enabled:  wsEnabled && !isFallback,
+    enabled:  wsEnabled && !isFallback && isBinance,
+    onTick:   handleTick,
+    onStatus: setWsStatus,
+  });
+
+  useTwelveDataWS({
+    symbol:   currentAsset.sym,
+    enabled:  wsEnabled && !isFallback && !isBinance,
     onTick:   handleTick,
     onStatus: setWsStatus,
   });

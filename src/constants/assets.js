@@ -1,20 +1,16 @@
 export const ASSETS = [
-  // ── Crypto ──────────────────────────────────────────────────
-  { sym: 'BTCUSDT',   label: 'BTC/USDT',   icon: '₿',  desc: 'Bitcoin',                cat: 'Crypto' },
-  { sym: 'ETHUSDT',   label: 'ETH/USDT',   icon: 'Ξ',  desc: 'Ethereum',               cat: 'Crypto' },
-  { sym: 'SOLUSDT',   label: 'SOL/USDT',   icon: '◎',  desc: 'Solana',                 cat: 'Crypto' },
-  { sym: 'BNBUSDT',   label: 'BNB/USDT',   icon: '⬡',  desc: 'BNB Chain',              cat: 'Crypto' },
-  { sym: 'XRPUSDT',   label: 'XRP/USDT',   icon: '✕',  desc: 'Ripple',                 cat: 'Crypto' },
-  { sym: 'ADAUSDT',   label: 'ADA/USDT',   icon: '₳',  desc: 'Cardano',                cat: 'Crypto' },
-  { sym: 'DOGEUSDT',  label: 'DOGE/USDT',  icon: 'Ð',  desc: 'Dogecoin',               cat: 'Crypto' },
-  { sym: 'AVAXUSDT',  label: 'AVAX/USDT',  icon: '▲',  desc: 'Avalanche',              cat: 'Crypto' },
-  { sym: 'LINKUSDT',  label: 'LINK/USDT',  icon: '⬡',  desc: 'Chainlink',              cat: 'Crypto' },
-  { sym: 'DOTUSDT',   label: 'DOT/USDT',   icon: '●',  desc: 'Polkadot',               cat: 'Crypto' },
-  { sym: 'MATICUSDT', label: 'MATIC/USDT', icon: '◈',  desc: 'Polygon',                cat: 'Crypto' },
-  { sym: 'LTCUSDT',   label: 'LTC/USDT',   icon: 'Ł',  desc: 'Litecoin',               cat: 'Crypto' },
-  // ── Tokenised Commodities ────────────────────────────────────
-  { sym: 'PAXGUSDT',  label: 'PAXG/USDT',  icon: '🥇', desc: 'PAX Gold (Tokenised)',    cat: 'Commodities' },
-  { sym: 'XAUTUSDT',  label: 'XAUT/USDT',  icon: '🏅', desc: 'Tether Gold (Tokenised)', cat: 'Commodities' },
+  // ── Crypto (Binance) ────────────────────────────────────────
+  { sym: 'BTCUSDT',   label: 'BTC/USDT',   icon: '₿',  desc: 'Bitcoin',      cat: 'Crypto', provider: 'binance' },
+  { sym: 'ETHUSDT',   label: 'ETH/USDT',   icon: 'Ξ',  desc: 'Ethereum',     cat: 'Crypto', provider: 'binance' },
+  { sym: 'SOLUSDT',   label: 'SOL/USDT',   icon: '◎',  desc: 'Solana',       cat: 'Crypto', provider: 'binance' },
+  { sym: 'BNBUSDT',   label: 'BNB/USDT',   icon: '⬡',  desc: 'BNB Chain',    cat: 'Crypto', provider: 'binance' },
+  { sym: 'XRPUSDT',   label: 'XRP/USDT',   icon: '✕',  desc: 'Ripple',       cat: 'Crypto', provider: 'binance' },
+  { sym: 'ADAUSDT',   label: 'ADA/USDT',   icon: '₳',  desc: 'Cardano',      cat: 'Crypto', provider: 'binance' },
+  { sym: 'DOGEUSDT',  label: 'DOGE/USDT',  icon: 'Ð',  desc: 'Dogecoin',     cat: 'Crypto', provider: 'binance' },
+  
+  // ── Commodities (Twelve Data) ───────────────────────────────
+  { sym: 'XAU/USD',   label: 'XAU/USD',    icon: '🥇', desc: 'Gold Spot',    cat: 'Commodities', provider: 'twelvedata' },
+  { sym: 'USO',       label: 'USO (Oil)',  icon: '🛢️', desc: 'US Oil Fund',  cat: 'Commodities', provider: 'twelvedata' },
 ];
 
 export const DEFAULT_ASSET = ASSETS[0];
